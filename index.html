@@ -1,0 +1,58 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>음양력 변환 데모</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f9f9f9; border-radius: 12px; }
+    h1 { color: #333; }
+    input, button { padding: 8px; font-size: 16px; margin-top: 8px; }
+    #result { margin-top: 20px; padding: 10px; background: #fff; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>음양력 변환 API 데모</h1>
+  <p>양력 날짜를 입력하면 음력으로 변환해주는 공개 API를 사용한 데모입니다.</p>
+  
+  <label for="date">양력 날짜 입력 (YYYY-MM-DD):</label><br />
+  <input type="date" id="date" />
+  <button onclick="convertDate()">변환하기</button>
+
+  <div id="result"></div>
+
+  <script>
+    async function convertDate() {
+      const date = document.getElementById("date").value;
+      if (!date) return alert("날짜를 입력해주세요.");
+      
+      const [year, month, day] = date.split("-");
+      const url = `https://apis.data.go.kr/B090041/openapi/service/LrsrCldInfoService/getLunCalInfo?solYear=${year}&solMonth=${month}&solDay=${day}&ServiceKey=여기에_인증키`;
+
+      document.getElementById("result").innerHTML = "조회 중...";
+
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, "application/xml");
+        const item = xml.querySelector("item");
+
+        if (item) {
+          const lunYear = item.querySelector("lunYear")?.textContent || "-";
+          const lunMonth = item.querySelector("lunMonth")?.textContent || "-";
+          const lunDay = item.querySelector("lunDay")?.textContent || "-";
+          const leapMonth = item.querySelector("leapMonth")?.textContent === "1" ? "(윤달)" : "";
+
+          document.getElementById("result").innerHTML =
+            `<strong>음력:</strong> ${lunYear}년 ${lunMonth}월 ${lunDay}일 ${leapMonth}`;
+        } else {
+          document.getElementById("result").innerHTML = "📛 변환 결과가 없습니다.";
+        }
+      } catch (e) {
+        document.getElementById("result").innerHTML = `❌ 오류: ${e.message}`;
+      }
+    }
+  </script>
+</body>
+</html>
